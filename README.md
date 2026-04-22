@@ -53,8 +53,17 @@
 
 *(提示：可以在上傳作業前，自行於此資料夾補上網站畫面的截圖唷！)*
 - `home.png`：宮廟首頁與靈籤筒畫面
+  1.首頁
+  <img width="1919" height="902" alt="image" src="https://github.com/user-attachments/assets/d90a2ea3-86ac-4c43-a6b8-04dec121a3d5" />
+  2.抽籤晃動動畫
+  <img width="1916" height="847" alt="image" src="https://github.com/user-attachments/assets/7b81f1ed-5831-4175-8c2a-6d5d2a97d5da" />
 - `history.png`：我的紀錄（切換分頁）對話方塊
+  1.抽籤紀錄
+  <img width="837" height="493" alt="image" src="https://github.com/user-attachments/assets/1f282d09-74b1-45c4-baf2-9879887f2843" />
+  2.香火錢儲值紀錄
+  <img width="868" height="398" alt="image" src="https://github.com/user-attachments/assets/e45de218-699b-4614-9771-0b1431b4ec18" />
 - `wallet.png`：香火錢儲值模擬畫面
+  <img width="936" height="587" alt="image" src="https://github.com/user-attachments/assets/391f3943-2553-449c-a963-dd1acfc07d59" />
 
 ### 5. 心得報告（本 README.md 下方）
 
