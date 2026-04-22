@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>線上宮廟 - 抽籤與捐獻系統</title>
+    <style>
+        :root {
+            --bg-color: #1a0b0b;
+            --gold-primary: #d4af37;
+            --gold-hover: #f1dd8a;
+            --red-temple: #7b0000;
+        }
+        body {
+            background-color: var(--bg-color); color: #fff;
+            font-family: 'Times New Roman', "標楷體", serif;
+            margin: 0; display: flex; flex-direction: column;
+            align-items: center; min-height: 100vh;
+        }
+        nav {
+            width: 100%; padding: 20px; background: rgba(0,0,0,0.8);
+            border-bottom: 2px solid var(--gold-primary);
+            display: flex; justify-content: space-between;
+            box-sizing: border-box; align-items: center;
+        }
+        .logo { font-size: 24px; color: var(--gold-primary); font-weight: bold; }
+        .btn-gold {
+            background-color: var(--red-temple); border: 1px solid var(--gold-primary);
+            color: var(--gold-primary); padding: 10px 20px;
+            cursor: pointer; border-radius: 4px; font-size: 16px;
+            transition: 0.3s; margin-left: 10px;
+        }
+        .btn-gold:hover { background-color: var(--gold-primary); color: var(--bg-color); }
+        .main-container { margin-top: 10vh; text-align: center; }
+        .title-bwei {
+            font-size: 3rem; margin-bottom: 30px;
+            background: linear-gradient(to right, #d4af37, #f1dd8a);
+            -webkit-background-clip: text; color: transparent;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+        }
+        .fortune-cylinder {
+            width: 150px; height: 250px; background: #4a1515;
+            margin: 0 auto 30px; border: 5px solid var(--gold-primary);
+            border-radius: 10px; cursor: pointer; transition: transform 0.1s;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; color: var(--gold-primary);
+        }
+        .fortune-cylinder:active { transform: rotate(5deg); }
+        
+        /* Modal & Tabs Styles */
+        .modal {
+            display: none; position: fixed; z-index: 999;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.8);
+        }
+        .modal-content {
+            background-color: #2b0f0f; margin: 15% auto;
+            padding: 30px; border: 2px solid var(--gold-primary);
+            width: 80%; max-width: 500px; text-align: center;
+            border-radius: 8px; position: relative;
+        }
+        .close { color: var(--gold-primary); position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .form-group { margin-bottom: 15px; text-align: left;}
+        .form-group label { display: block; color: var(--gold-hover); margin-bottom: 5px; }
+        .form-group input { width: 100%; padding: 10px; box-sizing: border-box; background: #111; border: 1px solid var(--gold-hover); color: white; }
+        .history-list { text-align: left; max-height: 300px; overflow-y: auto; }
+        .history-item { border-bottom: 1px solid var(--gold-primary); padding: 10px 0; display: flex; justify-content: space-between; }
+        .donate-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 20px;}
+        .amount-btn { padding: 15px; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-hover); cursor: pointer;}
+        .amount-btn:hover, .amount-btn.selected { background: var(--gold-primary); color: var(--bg-color);}
+        
+        .tab-bar { display:flex; gap:10px; margin-bottom:15px; border-bottom:1px solid var(--gold-primary); }
+        .tab-btn { background: transparent; color: var(--gold-hover); border: none; font-size:16px; padding: 10px; cursor: pointer;}
+        .tab-btn.active { color: var(--gold-primary); font-weight: bold; border-bottom: 2px solid var(--gold-primary); }
+        .pill-balance { background-color: var(--gold-primary); color: var(--bg-color); padding: 5px 10px; border-radius: 12px; font-weight:bold; margin-right: 15px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="logo">靈修護守線上宮廟</div>
+        <div id="nav-buttons">
+            <span id="user-greeting" style="color:white; margin-right: 10px;"></span>
+            <span id="user-balance" class="pill-balance" style="display:none;"></span>
+            <button class="btn-gold" id="loginLogoutBtn" onclick="openLoginModal()">會員登入</button>
+            <button class="btn-gold" onclick="openHistoryModal()">我的紀錄</button>
+            <button class="btn-gold" onclick="openDonateModal()">香火儲值</button>
+        </div>
+    </nav>
+    <div class="main-container">
+        <h1 class="title-bwei">誠心默念，點擊抽籤</h1>
+        <div class="fortune-cylinder" onclick="drawPoem()">求籤</div>
+        <p id="result-text" style="color: var(--gold-hover); font-size: 1.5rem;"></p>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('authModal')">&times;</span>
+            <h2 id="authTitle" style="color:var(--gold-primary)">登入</h2>
+            <div class="form-group"><label>Email信箱</label><input type="email" id="email" /></div>
+            <div class="form-group"><label>密碼</label><input type="password" id="password" /></div>
+            <button class="btn-gold" style="width: 100%; margin-top: 15px;" id="authSubmitBtn" onclick="doAuth()">確認登入</button>
+            <p style="margin-top: 15px; font-size:14px;"><a href="#" style="color:var(--gold-hover);" onclick="toggleAuthMode()">沒有帳號？立即註冊</a></p>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('historyModal')">&times;</span>
+            <h2 style="color:var(--gold-primary)">個人明細紀錄</h2>
+            
+            <div class="tab-bar">
+                <button class="tab-btn active" id="tab-divination" onclick="switchTab('divination')">📋 神明指示</button>
+                <button class="tab-btn" id="tab-donation" onclick="switchTab('donation')">💰 儲值明細</button>
+            </div>
+
+            <div class="history-list" id="historyContainer">
+                <!-- Data populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Donate Modal -->
+    <div id="donateModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('donateModal')">&times;</span>
+            <h2 style="color:var(--gold-primary)">香火錢儲值</h2>
+            <p style="color: #ccc; font-size: 14px;">儲值的香火錢將會進入您的帳號餘額中保管</p>
+            <div class="donate-grid">
+                <button class="amount-btn" onclick="selectAmount(100)">NT$ 100</button>
+                <button class="amount-btn" onclick="selectAmount(500)">NT$ 500</button>
+                <button class="amount-btn" onclick="selectAmount(1000)">NT$ 1000</button>
+            </div>
+            <div class="form-group" style="margin-top:20px;">
+                <label>自訂金額</label>
+                <input type="number" id="customAmount" placeholder="手動輸入金額" onchange="clearSelectedAmounts()"/>
+            </div>
+            <button class="btn-gold" style="width: 100%; margin-top: 15px;" onclick="doDonate()">確認儲值</button>
+        </div>
+    </div>
+
+    <script>
+        let isLoggedIn = false;
+        let isLoginMode = true;
+        let selectedAmount = null;
+        let currentTab = 'divination';
+
+        window.onload = function() { checkAuth(); }
+
+        async function checkAuth() {
+            const res = await fetch('/api/auth/me');
+            const data = await res.json();
+            isLoggedIn = data.logged_in;
+            const btn = document.getElementById('loginLogoutBtn');
+            const greeting = document.getElementById('user-greeting');
+            const balancePill = document.getElementById('user-balance');
+            
+            if (isLoggedIn) {
+                btn.innerText = '切換帳號';
+                btn.onclick = doLogout;
+                greeting.innerText = data.email.split('@')[0];
+                balancePill.innerText = `香火庫存: $ ${data.balance}`;
+                balancePill.style.display = 'inline';
+            } else {
+                btn.innerText = '會員登入';
+                btn.onclick = openLoginModal;
+                greeting.innerText = '';
+                balancePill.style.display = 'none';
+            }
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        function openLoginModal() {
+            isLoginMode = true;
+            document.getElementById('authTitle').innerText = '登入';
+            document.getElementById('authSubmitBtn').innerText = '確認登入';
+            document.getElementById('authModal').style.display = 'block';
+        }
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('authTitle').innerText = isLoginMode ? '登入' : '註冊';
+            document.getElementById('authSubmitBtn').innerText = isLoginMode ? '確認登入' : '確認註冊';
+        }
+        async function doAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+            const res = await fetch(endpoint, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email, password})
+            });
+            const data = await res.json();
+            if (res.ok) { closeModal('authModal'); checkAuth(); alert(data.message);
+            } else { alert(data.error); }
+        }
+        async function doLogout() {
+            await fetch('/api/auth/logout', {method: 'POST'});
+            checkAuth();
+            alert('已登出');
+        }
+
+        function drawPoem() {
+            const cylinder = document.querySelector('.fortune-cylinder');
+            let shakes = 0;
+            const targetPoem = Math.floor(Math.random() * 60 + 1);
+            const shakeInterval = setInterval(async () => {
+                cylinder.style.transform = shakes % 2 === 0 ? 'rotate(10deg)' : 'rotate(-10deg)';
+                shakes++;
+                if (shakes > 10) {
+                    clearInterval(shakeInterval);
+                    cylinder.style.transform = 'rotate(0deg)';
+                    document.getElementById('result-text').innerText = '神明指示... 您求得第 ' + targetPoem + ' 首籤詩！請繼續擲筊確認。';
+                    
+                    if (isLoggedIn) {
+                        await fetch('/api/divination/record', {
+                            method: 'POST', headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({poem_id: targetPoem})
+                        });
+                    }
+                }
+            }, 50);
+        }
+
+        // --- History & Tab flow ---
+        async function openHistoryModal() {
+            if (!isLoggedIn) { alert("請先登入後才能檢視歷史紀錄！"); openLoginModal(); return; }
+            document.getElementById('historyModal').style.display = 'block';
+            loadHistory();
+        }
+
+        function switchTab(tab) {
+            document.getElementById('tab-' + currentTab).classList.remove('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+            currentTab = tab;
+            loadHistory();
+        }
+
+        async function loadHistory() {
+            const container = document.getElementById('historyContainer');
+            container.innerHTML = '<p style="text-align:center;">讀取中...</p>';
+            
+            if (currentTab === 'divination') {
+                const res = await fetch('/api/history');
+                const records = await res.json();
+                if (records.length === 0) container.innerHTML = '<p style="text-align:center; color:#ccc;">您尚未有抽籤紀錄。</p>';
+                else {
+                    let html = '';
+                    records.forEach(r => {
+                        html += `<div class="history-item">
+                            <span>📅 ${r.date}</span>
+                            <span style="color:var(--gold-hover)">第 ${r.poem_id} 首籤詩</span>
+                        </div>`;
+                    });
+                    container.innerHTML = html;
+                }
+            } else {
+                // Donation History
+                const res = await fetch('/api/history/donations');
+                const records = await res.json();
+                if (records.length === 0) container.innerHTML = '<p style="text-align:center; color:#ccc;">您尚未有儲值明細。</p>';
+                else {
+                    let html = '';
+                    records.forEach(r => {
+                        html += `<div class="history-item">
+                            <span>📅 ${r.date}</span>
+                            <span style="color:var(--gold-primary); font-weight:bold;">+ NT$ ${r.amount}</span>
+                        </div>`;
+                    });
+                    container.innerHTML = html;
+                }
+            }
+        }
+
+        // --- Donate flow ---
+        function openDonateModal() { 
+            if (!isLoggedIn) { alert("請先登入後才能將香火保留在您的帳戶中！"); openLoginModal(); return; }
+            document.getElementById('donateModal').style.display = 'block'; 
+        }
+        function selectAmount(amt) { selectedAmount = amt; document.getElementById('customAmount').value = ''; }
+        function clearSelectedAmounts() { selectedAmount = null; }
+        async function doDonate() {
+            let userAmt = document.getElementById('customAmount').value;
+            let finalAmount = userAmt ? parseInt(userAmt) : selectedAmount;
+            if (!finalAmount || finalAmount <= 0) { alert('請選擇或填寫有效的金額'); return; }
+            
+            const res = await fetch('/api/donate', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({amount: finalAmount})
+            });
+            const data = await res.json();
+            closeModal('donateModal');
+            alert(data.message); // Mocking redirect
+            checkAuth(); // Refresh balance
+        }
+    </script>
+</body>
+</html>
